@@ -8,7 +8,6 @@ const conn = async () => {
     console.log("✅ Connected to MongoDB successfully!");
   } catch (error) {
     console.error("❌ MongoDB connection error:", error.message);
-    console.error("💡 Tip: Check Atlas IP whitelist (0.0.0.0/0 for testing)");
   }
 };
 
