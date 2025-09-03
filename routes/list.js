@@ -1,4 +1,5 @@
 import { Router } from "express";
+import mongoose from "mongoose";
 import User from "../model/user.js";
 import List from "../model/list.js";
 
@@ -8,6 +9,12 @@ const router = Router();
 router.post("/addTask", async (req, res) => {
   try {
     const { title, body, id } = req.body;
+    if (!title || !body || !id) {
+      return res.status(400).json({ message: "title, body and id are required" });
+    }
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid user id" });
+    }
     const existingUser = await User.findById(id);
 
     if (!existingUser) {
@@ -32,8 +39,15 @@ router.post("/addTask", async (req, res) => {
 router.put("/updateTask/:taskId", async (req, res) => {
   try {
     const { title, body } = req.body;
+    const { taskId } = req.params;
+    if (!title || !body) {
+      return res.status(400).json({ message: "title and body are required" });
+    }
+    if (!mongoose.isValidObjectId(taskId)) {
+      return res.status(400).json({ message: "Invalid task id" });
+    }
     const list = await List.findByIdAndUpdate(
-      req.params.taskId,
+      taskId,
       { title, body },
       { new: true }
     );
@@ -53,6 +67,9 @@ router.put("/updateTask/:taskId", async (req, res) => {
 router.delete("/deleteTask/:taskId/:userId", async (req, res) => {
   try {
     const { taskId, userId } = req.params;
+    if (!mongoose.isValidObjectId(taskId) || !mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({ message: "Invalid task or user id" });
+    }
 
     const existingUser = await User.findByIdAndUpdate(userId, {
       $pull: { List: taskId },
@@ -74,7 +91,11 @@ router.delete("/deleteTask/:taskId/:userId", async (req, res) => {
 // 🔹 Get All Tasks
 router.get("/getTasks/:id", async (req, res) => {
   try {
-    const list = await List.find({ user: req.params.id }).sort({
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid user id" });
+    }
+    const list = await List.find({ user: id }).sort({
       createdAt: -1,
     });
     if (list.length !== 0) {
