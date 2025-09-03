@@ -7,17 +7,17 @@ const router = Router();
 // 🔹 Create Task
 router.post("/addTask", async (req, res) => {
   try {
-    const { title, body, id } = req.body; // id = user ka id
+    const { title, body, id } = req.body;
     const existingUser = await User.findById(id);
 
     if (!existingUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const list = new List({ title, body, user: existingUser._id }); // ✅ _id pass karo
+    const list = new List({ title, body, user: existingUser._id });
     await list.save();
 
-    existingUser.List.push(list); // ✅ "lists" hona chahiye
+    existingUser.List.push(list._id);
     await existingUser.save();
 
     res.status(200).json({ list });
@@ -55,7 +55,7 @@ router.delete("/deleteTask/:taskId/:userId", async (req, res) => {
     const { taskId, userId } = req.params;
 
     const existingUser = await User.findByIdAndUpdate(userId, {
-      $pull: { list: taskId },
+      $pull: { List: taskId },
     });
 
     if (!existingUser) {

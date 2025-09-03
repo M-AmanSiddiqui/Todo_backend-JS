@@ -1,6 +1,6 @@
 import { Router } from "express";
 import User from "../model/user.js";
-import bcrypt from "bcryptjs"
+import bcrypt from "bcryptjs";
 
 
 const router = Router();
@@ -9,14 +9,19 @@ const router = Router();
 router.post("/register", async (req, res) => {
   try {
     const { email, username, password } = req.body;
-    const hashpassword = bcrypt.hashSync(password)
-    const user = new User({ email, username, password:hashpassword });
-    await user.save().then(() => 
-      res.status(200).json({ message: "Signup Successfull" })
-    );
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(409).json({ message: "User Already Exists" });
+    }
+    const hashpassword = bcrypt.hashSync(password, 10);
+    const user = new User({ email, username, password: hashpassword });
+    await user.save();
+    return res.status(201).json({ message: "Signup Successfull" });
   } catch (error) {
-    
-    res.status(200).json({ message: "User Already Exists" });
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
@@ -24,24 +29,22 @@ router.post("/register", async (req, res) => {
 
 router.post("/signin", async (req, res) => {
   try {
-   const user = await User.findOne({email: req.body.email });
-   if (!user){
-    res.status(200).json({ message: "Please Sign up First"  })
-   };
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "Please Sign up First" });
+    }
 
-  
- const isPasswordCorrect = bcrypt.compareSync(req.body.password,user.password)
-   if (!isPasswordCorrect){
-    res.status(200).json({ message: "Password Is Not Correct"  })
-   }
+    const isPasswordCorrect = bcrypt.compareSync(password, user.password);
+    if (!isPasswordCorrect) {
+      return res.status(401).json({ message: "Password Is Not Correct" });
+    }
 
-   const { password , ...others } = user._doc;
-   res.status(200).json({others });
-   
-  
-   } catch (error) {
+    const { password: _password, ...others } = user._doc;
+    return res.status(200).json({ others });
+  } catch (error) {
     console.error(error);
-    res.status(200).json({ message: "User Already Exists" });
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 });
 export default router;
