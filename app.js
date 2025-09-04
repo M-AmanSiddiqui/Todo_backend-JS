@@ -13,13 +13,23 @@ app.use(cors());
 
 conn();
 
+// Test route
+app.get("/", (req, res) => {
+  res.json({ message: "Todo Backend is running!" });
+});
+
 // API routes
 app.use("/api/v1", auth);
 app.use("/api/v2", list);
 
 // Health check
 app.get("/api/health", (req, res) => {
-  res.status(200).json({ status: "ok" });
+  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// 404 handler for API routes
+app.use("/api/*", (req, res) => {
+  res.status(404).json({ error: "API endpoint not found", path: req.path });
 });
 
 export default app;
